@@ -5,10 +5,21 @@ until [[ -f /var/lib/cloud/instance/boot-finished ]]; do
 	  sleep 1
   done
 
-  # install nginx
-  apt-get update
-  apt-get -y install nginx
+  # install haxproxy
+  sudo apt-get update
+  sudo apt-get -y install haproxy
+  sudo haproxy version
+  sudo echo "frontend Local_Server
+                 bind *:80
+                 mode http
+	         default_backend k8s_server
 
-  # make sure nginx is started
-  service nginx start
+	     backend k8s_server
+	         mode http
+		 balance roundrobin
+		 server web1.example.com  IP_VALUE:8080" > /etc/haproxy/haproxy.cfg
+  sudo  haproxy -c -f /etc/haproxy/haproxy.cfg		 
+
+  # make sure haproxy is started
+  sudo service haxproxy restart
 

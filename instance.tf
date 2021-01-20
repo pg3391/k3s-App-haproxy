@@ -23,28 +23,30 @@ resource "aws_security_group" "instances" {
   description = "k3s-${var.resource_prefix}"
   }
 
-resource "aws_instance" "server" {
+resource "aws_instance" "worker" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.ec2_instance_type
-  user_data = file("cloud-config-server.yml")
+  user_data = file("cloud-config-worker.yml")
   key_name = aws_key_pair.sshkey.key_name
   vpc_security_group_ids = [aws_security_group.instances.id]
   tags = {
-    Name = "k3s-server"
+    Name = "k3s-worker"
   }
 provisioner "file" {
-    source      = "AppBundle.yaml"
-    destination = "AppBundleDeployment.yaml"
+    source      = "app-ingress.yaml"
+    destination = "app-ingress.yaml"
   }
   provisioner "file" {
-    source      = "haproxy-ingress.yaml"
-    destination = "haproxy-ing.yaml"
+    source      = "IngressControllerBundle.yaml"
+    destination = "IngressControllerBundle.yaml"
   }
   provisioner "remote-exec" {
     inline = [
-      "sleep 5; sudo chmod +x AppBundleDeployment.yaml; sudo chmod +x haproxy-ing.yaml",
-      "sudo kubectl create -f haproxy-ing.yaml",
-      "sudo kubectl create -f  AppBundleDeployment.yaml",
+      "sleep 5; sudo chmod +x app-ingress.yaml; sudo chmod +x IngressControllerBundle.yaml",
+      "kubectl create -f app-ingress.yaml",
+      "kubectl create -f IngressControllerBundle.yaml",
+      "kubectl create deployment demo --image=rahulwagh17/kubernetes:jhooq-k8s-springboot",
+      "kubectl expose deployment demo --type=ClusterIP --name=demo-service  --port=8080"
     ]
   }
  provisioner "file" {
@@ -66,14 +68,14 @@ provisioner "file" {
   }
 }
 
-resource "aws_instance" "worker" {
+resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.ec2_instance_type
-  user_data = file("cloud-config-worker.yml")
+  user_data = file("cloud-config-server.yml")
   key_name = aws_key_pair.sshkey.key_name
   vpc_security_group_ids = [aws_security_group.instances.id]
   tags = {
-    Name = "k3s-worker"
+    Name = "k3s-server"
   }
   connection {
     host        = coalesce(self.public_ip, self.private_ip)
@@ -82,7 +84,6 @@ resource "aws_instance" "worker" {
     private_key = file(var.PATH_TO_PRIVATE_KEY)
   }
 }
-
 resource "aws_security_group_rule" "ssh" {
   type            = "ingress"
   from_port       = 22
@@ -117,3 +118,4 @@ resource "aws_security_group_rule" "kubeapi" {
   self            = true
   security_group_id = aws_security_group.instances.id
 }
+
