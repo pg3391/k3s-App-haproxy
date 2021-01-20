@@ -15,6 +15,7 @@ Once the step 4 is done you will see in your AWS console the K3s cluster with ma
 6. ssh into "node" and edit script at `/root/k3s.sh`, replacing the endpoint URL with the internal VPC DNS/IP of the "server" and the node token taken from server as in step 3. And run script `#sudo sh /root/k3s.sh`
 
 7. `kubectl get nodes` should show two nodes registered
+8. Goto /etc/haproxy/haproxy.cfg and replace IP_VALUE with server IP and restart haxoryx with #service haproxy restart
 ###############################################################
 
 Once this is done You will Can login to master/worker and run to validate the resource "kubectl get all --all-namespaces". 
@@ -22,6 +23,6 @@ Note: For the moment code is deploying application and haxproxy in master node t
 
 The Application server Details can be verified with `curl -I -H 'Host: foo.bar' 'http://<clusterIP/DNS_IP>:30279'` 
 
-For more details on HAPROXY Setup: https://www.haproxy.com/blog/dissecting-the-haproxy-kubernetes-ingress-controller/
+For more details on HAPROXY Setup: 
 
 Thanks, connect for Anyhelp: pg3391@gmail.com
